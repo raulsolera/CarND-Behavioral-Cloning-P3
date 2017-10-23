@@ -8,8 +8,12 @@ from keras.layers import Flatten, Dense
 lines = []
 with open('data/driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
+    next(reader, None)  # skip the headers
     for line in reader:
         lines.append(line)
+
+print(lines[0])
+exit()
 
 # Load images and steering data
 images = []
