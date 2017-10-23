@@ -12,9 +12,6 @@ with open('data/driving_log.csv') as csvfile:
     for line in reader:
         lines.append(line)
 
-print(lines[0])
-exit()
-
 # Load images and steering data
 images = []
 measurements = []
