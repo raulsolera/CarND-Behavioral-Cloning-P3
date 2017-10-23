@@ -1,8 +1,8 @@
 import csv
 import cv2
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Flatten, Dense
+#from keras.models import Sequential
+#from keras.layers import Flatten, Dense
 
 # Load csv log file
 lines = []
@@ -20,9 +20,13 @@ for line in lines:
     image = cv2.imread(source_path)
     images.append(image)
     measurement = float(line[3])
-    measurements.append[measurement]
+    measurements.append(measurement)
 X_train = np.array(images)
 y_train = np.array(measurements)
+
+
+print(measurement)
+exit()
 
 # Define simple model
 model = Sequential()
