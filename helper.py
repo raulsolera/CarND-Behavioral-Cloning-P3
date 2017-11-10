@@ -124,7 +124,6 @@ def random_shear(image, steering_angle, shear_range=200):
 
     return image, steering_angle
 
-
 def random_rotation(image, steering_angle, rotation_amount=15):
     """
 
