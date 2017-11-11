@@ -32,8 +32,6 @@ with open(DATA_DIR+CSV_FILE) as csvfile:
     for line in reader:
         csv_file.append(line)
 
-
-csv_file = csv_file[:100]
 # Split csv in train and validation sets
 csv_train, csv_valid = train_test_split(csv_file, test_size = 0.2, shuffle = True)
 
