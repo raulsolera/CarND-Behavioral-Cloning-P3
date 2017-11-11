@@ -14,7 +14,6 @@ from scipy.stats import bernoulli
 DRIVING_LOG_FILE = './data/driving_log.csv'
 IMG_PATH = './data/'
 STEERING_COEFFICIENT = 0.229
-BATCH_SIZE = 64
 
 
 def crop(image, top_percent, bottom_percent):
@@ -124,6 +123,7 @@ def random_shear(image, steering_angle, shear_range=200):
 
     return image, steering_angle
 
+
 def random_rotation(image, steering_angle, rotation_amount=15):
     """
 
@@ -178,7 +178,7 @@ def generate_new_image(image, steering_angle, top_crop_percent=0.35, bottom_crop
     return image, steering_angle
 
 
-def get_next_image_files(batch_size=BATCH_SIZE):
+def get_next_image_files(batch_size=64):
     """
     The simulator records three images (namely: left, center, and right) at a given time
     However, when we are picking images for training we randomly (with equal probability)
@@ -214,7 +214,7 @@ def get_next_image_files(batch_size=BATCH_SIZE):
     return image_files_and_angles
 
 
-def generate_next_batch(batch_size=BATCH_SIZE):
+def generate_next_batch(batch_size=64):
     """
     This generator yields the next training batch
 
@@ -240,7 +240,7 @@ def generate_next_batch(batch_size=BATCH_SIZE):
         yield np.array(X_batch), np.array(y_batch)
 
 
-def save_model(model, model_name = 'model.h5', json_model_name='model.json', weights_name='model_w.h5'):
+def save_model(model, model_name='model.json', weights_name='model.h5'):
     """
     Save the model into the hard disk
 
@@ -256,15 +256,14 @@ def save_model(model, model_name = 'model.h5', json_model_name='model.json', wei
     :return:
         None
     """
-    silent_delete(json_model_name)
+    silent_delete(model_name)
     silent_delete(weights_name)
 
     json_string = model.to_json()
-    with open(json_model_name, 'w') as outfile:
+    with open(model_name, 'w') as outfile:
         json.dump(json_string, outfile)
 
     model.save_weights(weights_name)
-    model.save(model_name)
 
 
 def silent_delete(file):
