@@ -240,7 +240,7 @@ def generate_next_batch(batch_size=64):
         yield np.array(X_batch), np.array(y_batch)
 
 
-def save_model(model, model_name='model.json', weights_name='model.h5'):
+def save_model(model, model_name='model.json', weights_name='model_w.h5', full_model_name ='model.h5'):
     """
     Save the model into the hard disk
 
@@ -264,7 +264,7 @@ def save_model(model, model_name='model.json', weights_name='model.h5'):
         json.dump(json_string, outfile)
 
     model.save_weights(weights_name)
-
+    model.save(full_model_name)
 
 def silent_delete(file):
     """

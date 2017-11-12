@@ -5,6 +5,7 @@ import os, errno
 from scipy.ndimage import rotate
 from sklearn.utils import shuffle
 from imgaug import augmenters as iaa
+from random import random
 
 
 #\---> CONSTANTS <-----------------------------------------------------------\#
@@ -101,10 +102,20 @@ def random_rotate(image, angle, rotation_range=MAX_ROTATION_ANGLE):
     return image, angle - rad
 
 
+# Convert to grayscale
+def conv_to_graysale(image):
+    """
+    Convert to graysacale image an 1 channel, shape [X:X:1]
+    """
+    image = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
+    image = np.expand_dims(image, axis=2)
+    return image
+
+
 #\---> GENERATOR <-----------------------------------------------------------\#
 def transformed_data_generator(data, data_dir=DATA_DIR,
                                batch_size=BATCH_SIZE,
-                               image_load=True):
+                               image_load=True, shear_prob = 0.9):
     # Camera parameters
     cameras = ['center', 'left', 'right']
     cameras_index = {'center': 0, 'left': 1, 'right': 2}  # 0:center, 1:left, 2:right
@@ -139,7 +150,8 @@ def transformed_data_generator(data, data_dir=DATA_DIR,
                 ### Random transformations
                 image, angle = random_flip(image, angle)
                 image, angle = random_brightness_correction(image, angle)
-                image, angle = random_shear(image, angle)
+                if shear_prob > random():
+                    image, angle = random_shear(image, angle)
                 # image, angle = random_rotate(image, angle)
 
                 ### Resize
@@ -150,6 +162,59 @@ def transformed_data_generator(data, data_dir=DATA_DIR,
                 angles.append(angle)
 
             yield np.array(images), np.array(angles)
+
+
+def original_data_generator(data, data_dir=DATA_DIR,
+                            batch_size=BATCH_SIZE,
+                            tr_fn = [crop, resize],
+                            image_load=True):
+
+    num_samples = len(data)
+
+    while 1:  # Loop forever so the generator never terminates
+
+        data = shuffle(data)
+        images = []
+        angles = []
+
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = data[offset:offset + batch_size]
+
+            for line in batch_samples:
+
+                # Load image and angle
+                file_name = line[0].split('/')[-1]
+                path = data_dir + 'IMG/' + file_name
+                if image_load:
+                    image = cv2.imread(path)
+                else:
+                    image = np.zeros((160, 320, 3), dtype=np.uint8)
+                angle = float(line[3])
+
+                ### Resizing
+                for fn in tr_fn:
+                    image = fn(image)
+
+                images.append(image)
+                angles.append(angle)
+
+            yield np.array(images), np.array(angles)
+
+
+def lenet_generator(csv_file):
+    # For lenet architecture 32x32x1 grayscaled images required
+    for images, angles in transformed_data_generator(csv_file, new_width=32, new_height=32):
+        images = 0.299 * images[:, :, :, 0] + 0.587 * images[:, :, :, 1] + 0.114 * images[:, :, :, 2]
+        images = np.expand_dims(images, axis=3)
+        yield images, angles
+
+
+def lenet_orig_generator(csv_file):
+    # For lenet architecture 32x32x1 grayscaled images required
+    for images, angles in original_data_generator(csv_file, new_width=32, new_height=32):
+        images = 0.299 * images[:, :, :, 0] + 0.587 * images[:, :, :, 1] + 0.114 * images[:, :, :, 2]
+        images = np.expand_dims(images, axis=3)
+        yield images, angles
 
 
 #\---> MODEL SAVING <--------------------------------------------------------\#
