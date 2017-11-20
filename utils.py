@@ -1,5 +1,6 @@
 #\---> IMPORTS <-------------------------------------------------------------\#
 import numpy as np
+import csv
 import cv2
 import os, errno
 from scipy.ndimage import rotate
@@ -24,6 +25,36 @@ STEERING_CORRECTION = 0.23
 
 # batch size
 BATCH_SIZE = 32
+
+# Camera parameters
+cameras = ['center', 'left', 'right']
+cameras_index = {'center': 0, 'left': 1, 'right': 2}  # 0:center, 1:left, 2:right
+cameras_steering_correction = {'center': 0., 'left': STEERING_CORRECTION, 'right': -STEERING_CORRECTION}
+
+
+#\---> IMAGE LOAD <----------------------------------------------------------\#
+# Load images to memory to speed up generator
+def get_csv_file():
+    csv_file = []
+    with open(DATA_DIR+CSV_FILE) as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader, None)  # skip the headers
+        for line in reader:
+            csv_file.append(line)
+    return csv_file
+
+
+def load_data(csv_file, data_dir = DATA_DIR):
+    # Load center camera data
+    data = []
+    for line in csv_file:
+        data_line = []
+        for camera in cameras:
+            path = data_dir + 'IMG/' + line[cameras_index[camera]].strip().split('/')[-1]
+            data_line.append(cv2.imread(path))
+        data_line.append(float(line[3]))
+        data.append(data_line)
+    return data 
 
 
 #\---> IMAGE TRANSFORMATIONS <-----------------------------------------------\#
@@ -52,10 +83,12 @@ def crop_resize(images, top_cut=TOP_CUT, bottom_cut=BOTTOM_CUT, left_cut=0, righ
     """
     Crop and resize list of images
     """
-    height, width = images.shape[1:3]
+    if not images is np.ndarray:
+        images = np.array(images)
+    height, width = images[0].shape[0:2]
     cropped_images = images[:, top_cut:height - bottom_cut, left_cut:width - right_cut, :]
-    resize_images = [resize(image) for image in cropped_images]
-    return np.array(resize_images)
+    resized_images = [resize(image) for image in cropped_images]
+    return np.array(resized_images)
 
 
 # Random flip
@@ -81,163 +114,91 @@ def random_brightness_correction(image, angle):
     return image, angle
 
 
-# Random shear
-def random_shear(image, angle, shear_range=MAX_SHEAR_SHIFT):
-    """
-    Shear (affine transformation) horizontally by a random shift in the range of shear_range
-    Implies also steering angle correction
-    https://docs.opencv.org/2.4/doc/tutorials/imgproc/imgtrans/warp_affine/warp_affine.html
-    """
-    rows, cols, channels = image.shape
-    shear_shift = np.random.randint(-shear_range, shear_range + 1)
-    random_point = [cols / 2 + shear_shift, rows / 2]
-    pts1 = np.float32([[0, rows], [cols, rows], [cols / 2, rows / 2]])
-    pts2 = np.float32([[0, rows], [cols, rows], random_point])
-    M = cv2.getAffineTransform(pts1, pts2)
-    image = cv2.warpAffine(image, M, (cols, rows))
-    shear_angle = shear_shift / (rows / 2) * 180 / (np.pi * 25.0) / 6
-
-    return image, angle + shear_angle
-
-
-# Random rotation
-def random_rotate(image, angle, rotation_range=MAX_ROTATION_ANGLE):
-    """
-    Rotate image by a random angle in the range of rotation_range
-    Implies also steering angle correction
-    """
-    rotation_angle = np.random.uniform(-rotation_range, rotation_range+1)
-    rotate_fun = iaa.Affine(rotate=(-rotation_angle))
-    image = rotate_fun.augment_images([image])[0]
-    rad = (np.pi / 180.0) * rotation_angle
-
-    return image, angle - rad
-
-
-# Convert to grayscale
-def conv_to_graysale(image):
-    """
-    Convert to graysacale image an 1 channel, shape [X:X:1]
-    """
-    image = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
-    image = np.expand_dims(image, axis=2)
-    return image
-
-
-#\---> GENERATOR <-----------------------------------------------------------\#
-def transformed_data_generator(data, data_dir=DATA_DIR,
+#\---> GENERATORS <----------------------------------------------------------\#    
+def transformed_data_generator(data,
+                               read_data = False,
+                               data_dir = DATA_DIR,
                                batch_size=BATCH_SIZE,
-                               use_lateral_cameras = True,
-                               new_width=NEW_WIDTH, new_height=NEW_HEIGHT,
-                               image_load=True, shear_prob = 0.5):
-    # Camera parameters
-    cameras = ['center', 'left', 'right']
-    cameras_index = {'center': 0, 'left': 1, 'right': 2}  # 0:center, 1:left, 2:right
-    cameras_steering_correction = {'center': 0., 'left': STEERING_CORRECTION, 'right': -STEERING_CORRECTION}
-
+                               lateral_cameras = cameras,
+                               flip = True,
+                               brightness = True,
+                               new_width=NEW_WIDTH, new_height=NEW_HEIGHT):
+    
+    # data = load_data(csv_file)
     num_samples = len(data)
 
     while 1:  # Loop forever so the generator never terminates
 
         data = shuffle(data)
-        images = []
-        angles = []
 
         for offset in range(0, num_samples, batch_size):
             batch_samples = data[offset:offset + batch_size]
-
+            
+            images = []
+            angles = []
+            
             for line in batch_samples:
 
                 ### Randomly choose center, left or right image
                 # Get random camera 0:center, 1:left, 2:right
-                if use_lateral_cameras:
-                    camera = np.random.choice(cameras)
-                else:
-                    camera = 'center'
-                file_name = line[cameras_index[camera]].split('/')[-1]
-                path = data_dir + 'IMG/' + file_name
-                if image_load:
+                camera = np.random.choice(lateral_cameras)
+                
+                if read_data:
+                    path = data_dir + 'IMG/' + line[cameras_index[camera]].strip().split('/')[-1]                    
                     image = cv2.imread(path)
                 else:
-                    image = np.zeros((160, 320, 3), dtype=np.uint8)
-                # Adjust angle
+                    image = line[cameras_index[camera]]
                 angle = float(line[3]) + cameras_steering_correction[camera]
 
                 ### Random transformations
-                image, angle = random_flip(image, angle)
-                image, angle = random_brightness_correction(image, angle)
-                if shear_prob > np.random.random():
-                    image, angle = random_shear(image, angle)
-                # image, angle = random_rotate(image, angle)
-
-                ### Resize
-                image = crop(image)
-                image = resize(image, new_width=new_width, new_height=new_height)
+                if flip:
+                    image, angle = random_flip(image, angle)
+                if brightness:
+                    image, angle = random_brightness_correction(image, angle)
 
                 images.append(image)
                 angles.append(angle)
 
-            yield np.array(images), np.array(angles)
+            ### Resize
+            images = crop_resize(images, new_width=new_width, new_height=new_height)
+                
+            yield np.array(images), np.array(angles)            
 
-
-def original_data_generator(data, data_dir=DATA_DIR,
+def original_data_generator(data,
+                            read_data = False,
+                            data_dir = DATA_DIR,
                             batch_size=BATCH_SIZE,
-                            tr_fn = [crop, resize],
-                            image_load=True):
+                            new_width=NEW_WIDTH, new_height=NEW_HEIGHT):
 
     num_samples = len(data)
 
     while 1:  # Loop forever so the generator never terminates
 
         data = shuffle(data)
-        images = []
-        angles = []
-
+        
         for offset in range(0, num_samples, batch_size):
             batch_samples = data[offset:offset + batch_size]
+            
+            images = []
+            angles = []
 
             for line in batch_samples:
 
                 # Load image and angle
-                file_name = line[0].split('/')[-1]
-                path = data_dir + 'IMG/' + file_name
-                if image_load:
+                if read_data:
+                    path = data_dir + 'IMG/' + line[cameras_index['center']].strip().split('/')[-1]                    
                     image = cv2.imread(path)
                 else:
-                    image = np.zeros((160, 320, 3), dtype=np.uint8)
+                    image = line[cameras_index['center']]
                 angle = float(line[3])
-
-                ### Resizing
-                for fn in tr_fn:
-                    image = fn(image)
 
                 images.append(image)
                 angles.append(angle)
-
+                
+            ### Resize
+            images = crop_resize(images, new_width=new_width, new_height=new_height)
+                
             yield np.array(images), np.array(angles)
-
-
-def lenet_generator(data, data_dir=DATA_DIR,
-                    batch_size=BATCH_SIZE,
-                    use_lateral_cameras = True,
-                    image_load=True, shear_prob = 0.5):
-    # For lenet architecture 32x32x1 grayscaled images required
-    for images, angles in transformed_data_generator(data, data_dir=DATA_DIR,
-                                                     batch_size=BATCH_SIZE,
-                                                     new_width=32, new_height=32,
-                                                     use_lateral_cameras = True,
-                                                     image_load=True, shear_prob = 0.5):
-        images = 0.299 * images[:, :, :, 0] + 0.587 * images[:, :, :, 1] + 0.114 * images[:, :, :, 2]
-        images = np.expand_dims(images, axis=3)
-        yield images, angles
-
-
-def lenet_orig_generator(csv_file):
-    # For lenet architecture 32x32x1 grayscaled images required
-    for images, angles in original_data_generator(csv_file, new_width=32, new_height=32):
-        images = 0.299 * images[:, :, :, 0] + 0.587 * images[:, :, :, 1] + 0.114 * images[:, :, :, 2]
-        images = np.expand_dims(images, axis=3)
-        yield images, angles
 
 
 #\---> MODEL SAVING <--------------------------------------------------------\#
@@ -252,9 +213,3 @@ def delete_file(file_name):
 def save_model(model, model_name):
     delete_file(model_name)
     model.save(model_name)
-
-
-#\---> OTHER_UTILS <---------------------------------------------------------\#
-
-    
-
