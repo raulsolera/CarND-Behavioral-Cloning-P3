@@ -116,4 +116,4 @@ After some attemps the vehicle was able to drive autonomously and smoothly in th
 To cope with this section I record the vehicle in this short section and fine tuned the model for 4 epochs in this specific section.
 
 Finally, at the end of the process, the vehicle was able to drive autonomously around the track without leaving the road.
-[![alt text][image11]](http://www.youtube.com/watch?v=T-D1KVIuvjA)
+[![alt text][image11]](https://youtu.be/CMWLqC6mgGk)
