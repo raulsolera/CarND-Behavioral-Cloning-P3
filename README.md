@@ -12,6 +12,8 @@ Udacity Self Driving Car Nanodegree project 3: behavioral cloning.
 [image6]: ./report-images/c4f1_128_model.png "Model architecture"
 [image7]: ./report-images/image_generator.png "Image generator"
 [image8]: ./report-images/angle_distribution.png "Angle distribution"
+[image9]: ./report-images/driving-log.png "Driving log"
+[image10]: ./report-images/model-summary.png "Model summary"
 
 
 ## Overview
@@ -21,13 +23,7 @@ The goal of this project is to use deep learning to train a Convolutional Neural
 ## Data
 
 Data consists of three images from the center, left and right cameras in the car associated with the value of the steering angle. In the data collection process a CSV file is created that associates the path of the three images with its corresponding steering angle value, the following table shows the estructure of the log file:
-
-**center	left	right	steering	throttle	brake	speed**
-0	IMG/center_2016_12_01_13_30_48_287.jpg	IMG/left_2016_12_01_13_30_48_287.jpg	IMG/right_2016_12_01_13_30_48_287.jpg	0.0	0.0	0.0	22.148290
-1	IMG/center_2016_12_01_13_30_48_404.jpg	IMG/left_2016_12_01_13_30_48_404.jpg	IMG/right_2016_12_01_13_30_48_404.jpg	0.0	0.0	0.0	21.879630
-2	IMG/center_2016_12_01_13_31_12_937.jpg	IMG/left_2016_12_01_13_31_12_937.jpg	IMG/right_2016_12_01_13_31_12_937.jpg	0.0	0.0	0.0	1.453011
-3	IMG/center_2016_12_01_13_31_13_037.jpg	IMG/left_2016_12_01_13_31_13_037.jpg	IMG/right_2016_12_01_13_31_13_037.jpg	0.0	0.0	0.0	1.438419
-4	IMG/center_2016_12_01_13_31_13_177.jpg	IMG/left_2016_12_01_13_31_13_177.jpg	IMG/right_2016_12_01_13_31_13_177.jpg	0.0	0.0	0.0	1.418236
+![alt text][image9]
 
 An inspection of the steering angle values shows that it is highly biased towards the zero value as "a car is most times drive in straight way", the following graph show this distribution:
 ![alt text][image1]
@@ -44,40 +40,7 @@ On the other hand the data is skewed towards negative angle which is due to driv
 A model with 4 convolutional layers followed each one with a maxpooling layer (to reduce the model complexity and speed up the training) and a fully connected layer of size 128 was finally chosen. The input images were normalize to -1 to 1 interval in a lambda layer.
 
 The following graph and tables provide details of the final model:
-_________________________________________________________________
-**Layer (type)               Output Shape              Param #**
-_________________________________________________________________
-lambda_3 (Lambda)            (None, 64, 64, 3)         0         
-_________________________________________________________________
-conv2d_9 (Conv2D)            (None, 64, 64, 16)        1216      
-_________________________________________________________________
-max_pooling2d_9 (MaxPooling2 (None, 32, 32, 16)        0         
-_________________________________________________________________
-conv2d_10 (Conv2D)           (None, 32, 32, 32)        12832     
-_________________________________________________________________
-max_pooling2d_10 (MaxPooling (None, 16, 16, 32)        0         
-_________________________________________________________________
-conv2d_11 (Conv2D)           (None, 16, 16, 48)        38448     
-_________________________________________________________________
-max_pooling2d_11 (MaxPooling (None, 8, 8, 48)          0         
-_________________________________________________________________
-conv2d_12 (Conv2D)           (None, 8, 8, 64)          76864     
-_________________________________________________________________
-max_pooling2d_12 (MaxPooling (None, 4, 4, 64)          0         
-_________________________________________________________________
-flatten_3 (Flatten)          (None, 1024)              0         
-_________________________________________________________________
-dense_5 (Dense)              (None, 256)               262400    
-_________________________________________________________________
-dense_6 (Dense)              (None, 64)                16448     
-_________________________________________________________________
-dense_7 (Dense)              (None, 1)                 65        
-_________________________________________________________________
-Total params: 408,273
-Trainable params: 408,273
-Non-trainable params: 0
-_________________________________________________________________
-
+![alt text][image10]
 ![alt text][image6]
 
 
