@@ -14,7 +14,7 @@ Udacity Self Driving Car Nanodegree project 3: behavioral cloning.
 [image8]: ./report-images/angle_distribution.png "Angle distribution"
 [image9]: ./report-images/driving-log.png "Driving log"
 [image10]: ./report-images/model-summary.png "Model summary"
-[image11]: ./run1.mp4 "It drives!"
+[image11]: ./report-images/video-thumbnail.png "It drives!"
 
 
 ## Overview
@@ -116,4 +116,4 @@ After some attemps the vehicle was able to drive autonomously and smoothly in th
 To cope with this section I record the vehicle in this short section and fine tuned the model for 4 epochs in this specific section.
 
 Finally, at the end of the process, the vehicle was able to drive autonomously around the track without leaving the road.
-![alt text][image11]
+[![alt text][image11]](http://www.youtube.com/watch?v=T-D1KVIuvjA)
