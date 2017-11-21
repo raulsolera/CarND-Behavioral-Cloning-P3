@@ -14,6 +14,7 @@ Udacity Self Driving Car Nanodegree project 3: behavioral cloning.
 [image8]: ./report-images/angle_distribution.png "Angle distribution"
 [image9]: ./report-images/driving-log.png "Driving log"
 [image10]: ./report-images/model-summary.png "Model summary"
+[image11]: ./run1.mp4 "It drives!"
 
 
 ## Overview
@@ -108,8 +109,11 @@ The following images showed a 32 batch of images returned by the generator:
 
 Initially data was splitted among training and validation set, however measuring in mean square error in the validation set didn't show to be a fair approximation hence the training was done using the full data set and results validated in the autonomous drive simulator.
 
+## Final result
+
 After some attemps the vehicle was able to drive autonomously and smoothly in the intial section but failed to pass the section just after the bridge where the lane lines on the right of the road dissapeared.
 
 To cope with this section I record the vehicle in this short section and fine tuned the model for 4 epochs in this specific section.
 
 Finally, at the end of the process, the vehicle was able to drive autonomously around the track without leaving the road.
+![alt text][image11]
